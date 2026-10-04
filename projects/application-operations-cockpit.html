@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Application Operations Cockpit — Kirill Sadchikov</title>
+<meta name="description" content="A PostgreSQL + Python tool that reconciles customer IDs across two mismatched systems and pre-categorizes support tickets with a confidence threshold.">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <a class="back-link" href="../index.html">← Back to portfolio</a>
+    <div class="eyebrow">Data &amp; Process</div>
+    <h1>Application Operations Cockpit</h1>
+    <p class="lede">A tool for running a support operation: it reconciles customer records between two mismatched systems, pre-categorizes incoming tickets with a confidence threshold, and reports on backlog, SLA breaches, and data quality — all from PostgreSQL.</p>
+    <div class="meta-row">
+      <div class="meta-block">
+        <div class="meta-label">Tools</div>
+        <div class="badges">
+          <span class="badge">PostgreSQL</span>
+          <span class="badge">Python</span>
+          <span class="badge">SQL</span>
+          <span class="badge">matplotlib</span>
+        </div>
+      </div>
+      <div class="meta-block">
+        <div class="meta-label">Skills</div>
+        <div class="badges">
+          <span class="badge">Requirements Analysis</span>
+          <span class="badge">Data Modeling</span>
+          <span class="badge">Process Documentation</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<nav class="subnav">
+  <div class="wrap">
+    <a href="#overview">Overview</a>
+    <a href="#numbers">Results</a>
+    <a href="#mapping">Customer mapping</a>
+    <a href="#classification">Classification</a>
+    <a href="#quality">Data quality &amp; automation</a>
+    <a href="#incident">An incident I reproduced</a>
+    <a href="#limitations">Limitations</a>
+    <a href="#next">What's next</a>
+  </div>
+</nav>
+
+<main class="wrap">
+
+  <section class="chapter" id="overview">
+    <div class="step">OVERVIEW</div>
+    <h2 class="chapter-title">Overview</h2>
+    <p>Two source systems track the same customers under different IDs — a CRM export and a ticketing tool's own customer list — with no shared key and inconsistent formatting between them. This project reconciles the two with a tiered, confidence-scored match instead of a silent guess, and applies the same principle — automate what's safe, route what isn't to a person — to ticket categorization and daily SLA monitoring.</p>
+    <p class="lead">Built against a synthetic dataset modeled on a real support operation: ~200 customers (deliberately messy — formatting noise, a few customers that only exist in one system, a few duplicated by accident) and 3,000+ tickets over 6 months.</p>
+  </section>
+
+  <section class="chapter" id="numbers">
+    <div class="step">RESULTS</div>
+    <h2 class="chapter-title">185 of 192 customers reconciled, 91.4% categorization accuracy</h2>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="num">3,005</div><div class="label">Tickets, 6 months</div></div>
+      <div class="stat-card"><div class="num">13.2%</div><div class="label">SLA breach rate</div></div>
+      <div class="stat-card"><div class="num">185 / 192</div><div class="label">Customers reconciled across systems</div></div>
+      <div class="stat-card"><div class="num">91.4%</div><div class="label">Categorization accuracy vs. true category</div></div>
+    </div>
+  </section>
+
+  <section class="chapter" id="mapping">
+    <div class="step">CUSTOMER MAPPING</div>
+    <h2 class="chapter-title">Customer mapping</h2>
+    <p>The two systems share no key. Matching runs in tiers — the strongest signal first, each next tier only considering customers nobody has claimed yet — and every match is recorded with the method that produced it and a confidence score, so nothing downstream treats a weak match the same as a certain one.</p>
+    <table>
+      <tr><th>Tier</th><th>Method</th><th>Confidence</th><th>Matches</th></tr>
+      <tr><td>1</td><td>UID, normalized (strips spaces/hyphens)</td><td>1.00</td><td>155</td></tr>
+      <tr><td>2</td><td>Email, lowercased</td><td>0.95</td><td>15</td></tr>
+      <tr><td>3</td><td>Company name, normalized (legal-form suffixes, punctuation, "&amp;"/"und")</td><td>0.70</td><td>15</td></tr>
+      <tr><td>—</td><td>Left unmatched, not guessed</td><td>—</td><td>8 CRM-only, 7 ticket-only</td></tr>
+    </table>
+    <div class="shot-single shot">
+      <img src="images/app-ops-cockpit/mapping-report.png" alt="Terminal output of the mapping reconciliation report: 155 UID matches at confidence 1.00, 15 email matches at 0.95, 15 name matches at 0.70, and summary counts of 188 CRM customers, 192 ticket-system customers, 185 reconciled">
+    </div>
+    <p class="shot-caption">The reconciliation report turns the unmatched customers into an actual reviewable list, not just a count.</p>
+  </section>
+
+  <section class="chapter" id="classification">
+    <div class="step">CLASSIFICATION</div>
+    <h2 class="chapter-title">Ticket pre-categorization with a confidence threshold</h2>
+    <p>Each ticket's free text gets a proposed category and priority, with a confidence score. At or above 0.85, the proposal is applied automatically; below it, the ticket is routed to manual review instead. Every proposal is schema-validated before it's trusted at all — nothing is silently guessed.</p>
+    <div class="shot-single shot">
+      <img src="images/app-ops-cockpit/klassifikation-run.png" alt="Terminal output of the classification run: 3,005 tickets classified, 404 (13.4%) auto-applied above the 0.85 confidence threshold, 2,601 (86.6%) routed to review, 91.4% overall accuracy against the true category">
+    </div>
+    <p class="shot-caption">13.4% of tickets clear the threshold for automatic categorization; the rest are routed to review.</p>
+    <p><strong>How this is actually implemented.</strong> The original design calls for an LLM call — a prompt with the fixed category list, asking for a category and a confidence score back as JSON. This project runs in an environment with no LLM API key available to a standalone script, so the classifier implements the same architecture — a validated <code>{category, priority, confidence}</code> response, the same 0.85 threshold, the same routing to a review queue — using a deterministic keyword-weighted scorer instead of an actual model call. The result is written to the database as model <code>"regelbasiert-v1"</code>, specifically so it's never later misread as a real model call. Swapping in a real LLM means replacing one function; everything downstream — validation, the threshold, the review queue — stays the same.</p>
+    <p class="lead">The auto-apply rate (13.4%) is low relative to overall accuracy (91.4%) because the confidence formula is deliberately conservative — it only clears 0.85 when a ticket's text matches several category-specific keywords with no close competing category. That's the real, unflattered number; see What's next.</p>
+  </section>
+
+  <section class="chapter" id="quality">
+    <div class="step">DATA QUALITY &amp; AUTOMATION</div>
+    <h2 class="chapter-title">Data quality &amp; automation</h2>
+    <p>Incoming ticket records are validated independently — a broken record (missing field, unknown customer, bad date, invalid priority, even malformed JSON) is logged with a reason and does not stop the rest of the batch from loading. Every ingest run is logged, so what happened on any given day is a query, not a guess.</p>
+    <div class="shot-single shot">
+      <img src="images/app-ops-cockpit/dashboard-datenqualitaet.png" alt="Data quality dashboard showing mapping counts by method and confidence, and a pie chart of ticket classifications: 13% automatically applied, 87% routed to review">
+    </div>
+    <p class="shot-caption">Mapping and classification outcomes, rendered directly from the live PostgreSQL views.</p>
+    <p>A daily check queries open tickets within 4 hours of SLA breach, plus anything rejected by the last ingest run or still sitting in manual review — the logic a scheduled Power Automate or n8n flow would run. Neither tool was reachable from the environment this was built in, so the check ships as the exact query-and-condition logic that flow would use, runnable standalone or from cron; swapping a print statement for a Teams/email webhook is the only change needed to make it a real scheduled flow. The dashboards below are the same honest substitute for Power BI or Looker Studio — rendered straight from the same views, with real numbers, because neither BI tool was reachable either.</p>
+    <div class="shot-row">
+      <div>
+        <div class="shot"><img src="images/app-ops-cockpit/dashboard-overview.png" alt="Overview dashboard: 3,005 tickets total, 22 open, 13.2% SLA breach rate, 68 minute median first response, with a weekly ticket volume trend line over 6 months"></div>
+        <p class="shot-caption">Overview.</p>
+      </div>
+      <div>
+        <div class="shot"><img src="images/app-ops-cockpit/dashboard-betrieb.png" alt="Operations dashboard: stacked bar chart of ticket volume by category and channel (email, portal, telephone, chat)"></div>
+        <p class="shot-caption">Operations — volume by category and channel.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="chapter" id="incident">
+    <div class="step">AN INCIDENT I REPRODUCED</div>
+    <h2 class="chapter-title">"SLA counts came out doubled"</h2>
+    <p>While testing the mapping step, one customer's ticket count in the customer-360 view came out at 38 — double the real 19. Reproducing it: a mapping table <em>without</em> a uniqueness constraint on (CRM customer, ticket-system customer) accepts the same match twice if the matching pass ever runs twice — for example, after a scheduler retries a timed-out job. The join that reports ticket counts per customer then counts the ticket twice for each duplicated mapping row.</p>
+    <div class="outcome-strip">
+      <span class="pill warn">Without the constraint: 310 mapping rows after 2 runs, 38 tickets counted for one customer</span>
+      <span class="pill pass">With the constraint + idempotent insert: 155 rows, stays 155 on rerun, 19 tickets (correct)</span>
+    </div>
+    <p>A side-finding while fixing it: the constraint can't just be added back once duplicates already exist — <code>ALTER TABLE ... ADD CONSTRAINT UNIQUE</code> fails outright until the duplicates are removed first. The fix was two parts: deduplicate existing rows keeping the earliest, then guard every insert with <code>ON CONFLICT DO NOTHING</code> so a second run is a no-op instead of a duplicate. Full reproduction steps and SQL are in the repo's <a href="https://github.com/kirillsadchikov/application-operations-cockpit/blob/main/docs/incident_beispiel.md" target="_blank" rel="noopener">incident writeup</a>.</p>
+  </section>
+
+  <section class="chapter" id="limitations">
+    <div class="step">LIMITATIONS</div>
+    <h2 class="chapter-title">Limitations</h2>
+    <p>The dataset is synthetic, generated to be messy in the specific ways described above — a real system would surface failure modes this one doesn't model. The classification step is a documented stand-in for an LLM call, not a model call itself (see Classification). The daily automation and the dashboards are the query logic and SQL a real scheduled flow and a real BI tool would use, run locally rather than through Power Automate/n8n or Power BI/Looker Studio, since none of those were reachable from the environment this was built in.</p>
+  </section>
+
+  <section class="chapter" id="next">
+    <div class="step">WHAT'S NEXT</div>
+    <h2 class="chapter-title">What's next</h2>
+    <p>Compare the keyword classifier against a real LLM call on the same tickets, to see whether accuracy and the auto-apply rate both improve or just one does. Wire the SLA/data-quality check to an actual Power Automate or n8n flow, and the dashboards to Power BI or Looker Studio, against the same PostgreSQL database. Generate a second, larger synthetic dataset with different seeds to check the mapping tiers and the SLA breach rate hold up outside the one dataset they were tuned against.</p>
+  </section>
+
+</main>
+
+<footer class="wrap">
+  <p>Kirill Sadchikov — <a href="../index.html">portfolio home</a> · <a href="https://github.com/kirillsadchikov/application-operations-cockpit">GitHub repo</a></p>
+</footer>
+
+</body>
+</html>

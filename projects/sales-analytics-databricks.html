@@ -4,26 +4,23 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sales Analytics on Databricks — Kirill Sadchikov</title>
-<meta name="description" content="A medallion-architecture Databricks pipeline joining a marketing lead funnel to seller commerce activity — 8,000 leads to €676K in attributed post-acquisition revenue.">
+<meta name="description" content="A Databricks pipeline connecting marketing lead data to sales data — showing which channels actually bring in customers who spend money.">
 <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
 
 <header class="hero">
   <div class="wrap">
+    <a class="back-link" href="../index.html">← Back to portfolio</a>
     <div class="eyebrow">Data Pipeline</div>
     <h1>Sales Analytics on Databricks</h1>
-    <p class="lede">A bronze → silver → gold pipeline that joins marketing lead data to commerce data at the seller level — so "which channel converts the most leads" and "which channel brings in sellers who actually sell something" stop being two different answers.</p>
+    <p class="lede">Marketing can tell you which channels bring in the most leads. This pipeline connects that lead data to actual sales data, so you can see which channels bring in customers who go on to spend money — not just which ones generate the most signups.</p>
     <div class="badges">
       <span class="badge">Databricks</span>
       <span class="badge">PySpark</span>
       <span class="badge">Spark SQL</span>
       <span class="badge">Delta Lake</span>
       <span class="badge">Unity Catalog</span>
-    </div>
-    <div class="hero-links">
-      <a class="primary" href="https://github.com/kirillsadchikov/sales-analytics-databricks">View code on GitHub →</a>
-      <a href="../index.html">← Back to portfolio</a>
     </div>
     <div class="status-row">
       <div class="status-item"><div class="k">Status</div><div class="v">Both pipelines built, validated end-to-end</div></div>
@@ -34,8 +31,8 @@
 
 <nav class="subnav">
   <div class="wrap">
+    <a href="#gist">The project</a>
     <a href="#numbers">The numbers</a>
-    <a href="#problem">The question</a>
     <a href="#architecture">Architecture</a>
     <a href="#funnel">Marketing funnel</a>
     <a href="#seller-value">Seller value</a>
@@ -47,8 +44,15 @@
 
 <main class="wrap">
 
+  <section class="chapter" id="gist">
+    <div class="step">THE PROJECT</div>
+    <h2 class="chapter-title">Connecting marketing leads to what they actually spend</h2>
+    <p>A lead funnel lives in one system. Orders and payments live in another. Most of the time those two never actually get joined — so you can answer "which channel converts the most leads" but not "which channel brings in customers who go on to sell something." This pipeline closes that gap: lead → won deal → seller → first order → revenue, all traceable back to the channel that brought the lead in.</p>
+    <p class="lead">Built on the public <a href="https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce" target="_blank" rel="noopener">Olist Brazilian e-commerce dataset</a>, using Databricks, PySpark, and Spark SQL in a medallion (bronze → silver → gold) architecture.</p>
+  </section>
+
   <section class="chapter" id="numbers">
-    <div class="step">THE RESULT</div>
+    <div class="step">THE NUMBERS</div>
     <h2 class="chapter-title">8,000 leads in, €676,851 in attributed revenue out</h2>
     <p>Pulled straight from the gold-layer tables — a lead that becomes a won deal, becomes a seller, becomes orders and revenue, all traceable back to the channel that brought them in.</p>
     <div class="stat-grid">
@@ -60,13 +64,6 @@
       <div class="stat-card"><div class="num">4,518</div><div class="label">Post-acquisition orders</div></div>
       <div class="stat-card"><div class="num">€676,851</div><div class="label">Post-acquisition revenue</div></div>
     </div>
-  </section>
-
-  <section class="chapter" id="problem">
-    <div class="step">THE QUESTION</div>
-    <h2 class="chapter-title">Marketing can tell you conversion. It can't tell you revenue.</h2>
-    <p>A lead funnel lives in one system. Orders and payments live in another. Most of the time those two never actually get joined — so you can answer "which channel converts the most leads" but not "which channel brings in sellers who go on to sell something." I wanted to build the pipeline that closes that gap: lead → won deal → seller → first order → revenue, attributed all the way back to the channel and landing page that originated it.</p>
-    <p>Dataset: the public <a href="https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce" target="_blank" rel="noopener">Olist Brazilian e-commerce dataset</a> — marketing-qualified-leads and closed-deals tables joined against the full commerce schema (orders, order items, payments, products, sellers, customers, reviews, geolocation).</p>
   </section>
 
   <section class="chapter" id="architecture">

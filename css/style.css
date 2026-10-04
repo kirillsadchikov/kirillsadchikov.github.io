@@ -25,8 +25,12 @@ a{color:var(--accent)}
 /* ---- hero ---- */
 header.hero{
   background:linear-gradient(135deg,var(--navy),var(--navy-2));
-  color:#fff; padding:56px 0 44px;
+  color:#fff; padding:52px 0 40px;
+  border-bottom:3px solid var(--accent);
 }
+header.hero.hero-compact{padding:76px 0 58px}
+header.hero.hero-compact h1{font-size:36px}
+header.hero.hero-compact p.lede{font-size:17.5px; max-width:580px}
 header.hero .eyebrow{
   text-transform:uppercase; letter-spacing:.08em; font-size:12px;
   color:#9fc0f5; font-weight:600; margin-bottom:10px;
@@ -38,12 +42,11 @@ header.hero p.lede{font-size:16px; color:#cfe0fb; max-width:640px; margin:0 0 20
   background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.25);
   color:#fff; font-size:12.5px; padding:5px 11px; border-radius:999px;
 }
-.hero-links a{
-  color:#fff; text-decoration:none; font-size:14px; font-weight:600;
-  border:1px solid rgba(255,255,255,.4); padding:8px 16px; border-radius:7px;
-  margin-right:10px; margin-bottom:8px; display:inline-block;
+.back-link{
+  color:rgba(255,255,255,.72); text-decoration:none; font-size:13px; font-weight:600;
+  display:inline-block; margin-bottom:18px;
 }
-.hero-links a.primary{background:#fff; color:var(--navy); border-color:#fff}
+.back-link:hover{color:#fff}
 .status-row{display:flex; gap:28px; margin-top:26px; flex-wrap:wrap}
 .status-item .k{font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:#9fc0f5}
 .status-item .v{font-size:14px; font-weight:600; margin-top:2px}
@@ -70,26 +73,31 @@ ul.plain li{margin-bottom:6px; color:var(--ink)}
 @media (max-width:720px){.project-grid{grid-template-columns:1fr}}
 .project-card{
   background:var(--card); border:1px solid var(--line); border-radius:14px;
-  padding:24px; display:flex; flex-direction:column; gap:10px;
+  padding:26px; display:flex; flex-direction:column; gap:10px;
+  text-decoration:none; color:inherit; position:relative;
+  transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease;
 }
-.project-card.placeholder{
-  background:transparent; border:1.5px dashed var(--line); color:var(--muted);
-  align-items:center; justify-content:center; text-align:center; min-height:160px;
+.project-card:hover{
+  transform:translateY(-5px);
+  box-shadow:0 14px 32px rgba(16,41,66,.14);
+  border-color:var(--accent);
 }
 .project-card .tag{
   font-size:11px; text-transform:uppercase; letter-spacing:.05em; font-weight:700;
   color:var(--accent);
 }
-.project-card h3{margin:0}
+.project-card h3{margin:0; padding-right:24px}
 .project-card p{color:var(--muted); font-size:14.5px; margin:0}
-.project-card .tech{display:flex; flex-wrap:wrap; gap:6px; margin:6px 0 2px}
+.project-card .tech{display:flex; flex-wrap:wrap; gap:6px; margin:8px 0 2px}
 .project-card .tech span{
-  background:var(--accent-light); color:var(--navy); font-size:11.5px;
-  padding:3px 9px; border-radius:999px;
+  background:var(--navy); color:#fff; font-size:11.5px; font-weight:600;
+  padding:4px 10px; border-radius:999px;
 }
-.project-card .links{display:flex; gap:14px; margin-top:auto; padding-top:8px; font-size:14px; font-weight:600}
-.project-card .links a{text-decoration:none}
-.more-soon{color:var(--muted); font-size:13.5px; margin:16px 0 0}
+.project-card .card-arrow{
+  position:absolute; top:26px; right:24px; color:var(--line);
+  font-size:18px; line-height:1; transition:transform .15s ease, color .15s ease;
+}
+.project-card:hover .card-arrow{color:var(--accent); transform:translate(3px,-3px)}
 
 /* ---- tables ---- */
 table{width:100%; border-collapse:collapse; font-size:14px}

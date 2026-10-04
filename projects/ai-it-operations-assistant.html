@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AI & IT Operations Assistant — Kirill Sadchikov</title>
-<meta name="description" content="A grounded Copilot Studio assistant paired with deterministic Power Automate workflows for internal IT self-service.">
+<meta name="description" content="A Copilot Studio assistant paired with Power Automate workflows for internal IT self-service.">
 <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
@@ -38,10 +38,11 @@
 
 <nav class="subnav">
   <div class="wrap">
+    <a href="#overview">Overview</a>
     <a href="#problem">Problem</a>
     <a href="#approach">Approach</a>
-    <a href="#workflow">The workflow</a>
-    <a href="#ai-layer">The AI layer</a>
+    <a href="#workflow">Workflow</a>
+    <a href="#ai-layer">AI assistant</a>
     <a href="#guardrails">Guardrails</a>
     <a href="#limitation">Known limitation</a>
     <a href="#next">What's next</a>
@@ -50,17 +51,23 @@
 
 <main class="wrap">
 
+  <section class="chapter" id="overview">
+    <div class="step">OVERVIEW</div>
+    <h2 class="chapter-title">What this is</h2>
+    <p>An AI assistant built in Copilot Studio that handles employee IT questions, plus a Power Automate workflow that routes access requests for approval. Employees chat with the assistant to ask policy questions or request access to a system. The assistant answers from a set of policy documents, and for access requests, it collects the required details and creates a request that goes through an approval workflow in SharePoint and Outlook.</p>
+    <p class="lead">Built and tested in an isolated Microsoft 365 tenant with fictional data.</p>
+  </section>
+
   <section class="chapter" id="problem">
     <div class="step">THE PROBLEM</div>
-    <h2 class="chapter-title">IT support time going to things that don't need a human</h2>
-    <p>Most IT access requests follow the same shape: someone needs access to a system, for a reason, approved by someone. In practice they show up as Teams messages, half-written emails, or a hallway ask — which means incomplete information, no real audit trail, and IT chasing people for details that should've been there from the start. On top of that, people sometimes ask for more access than they actually need, just in case.</p>
-    <p>I wanted to see what that process looks like once it's actually built: a chat interface that asks the right questions, a workflow that routes it for approval, and a record of what happened and why.</p>
+    <h2 class="chapter-title">The problem</h2>
+    <p>IT access requests usually come in as Teams messages, emails, or verbal asks. That means missing information, no audit trail, and IT staff following up for details that should have been included from the start. Requests for more access than needed are also common.</p>
   </section>
 
   <section class="chapter" id="approach">
     <div class="step">APPROACH</div>
-    <h2 class="chapter-title">Not everything should be the AI's job</h2>
-    <p>The part of this I'd actually defend in an interview is the split: Copilot Studio handles the parts where language varies — understanding the request, answering policy questions, deciding what's missing. Power Automate handles everything that needs to be the same every time: who approves what, what happens on approval or rejection, what gets logged. AI is good at the first kind of problem and bad at the second — it shouldn't be making decisions that need to be predictable and auditable, and it should never be the one deciding who gets access to what.</p>
+    <h2 class="chapter-title">Approach</h2>
+    <p>Copilot Studio handles the parts of the conversation that vary — understanding the request, answering policy questions. Power Automate handles everything that has to be consistent every time — approval routing, logging, notifications. The AI never decides whether access is granted; that's always a human approval step.</p>
     <table>
       <tr><th>Where</th><th>Handled by</th></tr>
       <tr><td>Understanding the request, answering policy questions</td><td>Copilot Studio</td></tr>
@@ -71,31 +78,31 @@
 
   <section class="chapter" id="workflow">
     <div class="step">THE WORKFLOW</div>
-    <h2 class="chapter-title">A request becomes a tracked SharePoint item, not a message in a thread</h2>
-    <p>Every request lands in an <strong>IT Requests</strong> list in SharePoint — requester, system, business justification, priority, approver, status. That's the system of record the rest of the flow works off of.</p>
+    <h2 class="chapter-title">How it works</h2>
+    <p>Each request is stored as an item in a SharePoint list (IT Requests) with the requester, system, justification, priority, approver, and status.</p>
     <div class="shot-single shot">
       <img src="images/ai-it-ops/sharepoint-list.png" alt="SharePoint IT Requests list showing several access requests with status: New, Approved, Rejected, Pending Approval">
     </div>
-    <p class="shot-caption">The IT Requests list — each row is a request with its own status and approval history.</p>
+    <p class="shot-caption">IT Requests list in SharePoint.</p>
 
-    <p>Creating an item triggers the approval flow: it sets the item to <em>Pending Approval</em>, sends the approver a request by email, and branches on the decision.</p>
+    <p>Creating an item triggers a Power Automate flow: it sets the status to Pending Approval, emails the approver, and branches based on their decision.</p>
     <div class="shot-row">
       <div>
         <div class="shot"><img src="images/ai-it-ops/approval-flow-canvas.png" alt="Power Automate flow canvas: When an item is created, Update item, Start and wait for an approval, Condition branching True/False"></div>
-        <p class="shot-caption">The approval flow — trigger, status update, approval step, then branch on the outcome.</p>
+        <p class="shot-caption">Approval flow in Power Automate.</p>
       </div>
       <div>
         <div class="shot"><img src="images/ai-it-ops/approval-email.png" alt="Outlook approval email with request details and Approve/Reject buttons"></div>
-        <p class="shot-caption">The approver gets the full request context and decides right from Outlook.</p>
+        <p class="shot-caption">Approver reviews and decides from Outlook.</p>
       </div>
     </div>
 
-    <p>Both branches close the loop — approved or rejected, the requester gets a clear answer and the record stays updated.</p>
+    <p>Both outcomes update the SharePoint item and notify the requester by email.</p>
     <div class="shot-row">
       <div class="shot"><img src="images/ai-it-ops/approved-email.png" alt="Email notifying requester their access request was approved"></div>
       <div class="shot"><img src="images/ai-it-ops/rejected-email.png" alt="Email notifying requester their access request was rejected, with reason given"></div>
     </div>
-    <p class="shot-caption">Approved and rejected paths, both tested end to end — the run history below is from an actual execution, condition branch and all.</p>
+    <p class="shot-caption">Approved and rejected paths, tested end to end.</p>
     <div class="shot-single shot" style="max-width:500px">
       <img src="images/ai-it-ops/run-history.png" alt="Power Automate run history showing a successful run through the condition branches">
     </div>
@@ -103,14 +110,14 @@
 
   <section class="chapter" id="ai-layer">
     <div class="step">THE AI LAYER</div>
-    <h2 class="chapter-title">Grounded in three policy documents, nothing invented</h2>
-    <p>The assistant only answers from documents I gave it — an IT access policy, an incident escalation guide, and an internal AI usage policy. It has one tool wired up (creating an access request), and explicit instructions to never ask for passwords, MFA codes, or any other credential, and to say so plainly when it doesn't know something rather than guess.</p>
+    <h2 class="chapter-title">The AI assistant</h2>
+    <p>The assistant is grounded in three documents: an IT access policy, an incident escalation guide, and an internal AI usage policy. It has one tool (create an access request) and instructions to never ask for passwords or other credentials, and to say when it doesn't know an answer instead of guessing.</p>
     <div class="shot-single shot">
       <img src="images/ai-it-ops/copilot-studio-builder.png" alt="Copilot Studio agent builder showing instructions, the Create IT Access Request tool, and three connected policy documents as knowledge sources">
     </div>
-    <p class="shot-caption">The agent's setup: instructions, one tool, three knowledge sources it's grounded on.</p>
+    <p class="shot-caption">Copilot Studio setup: instructions, one tool, three knowledge sources.</p>
 
-    <p>Asked a specific policy question, it answers with the actual number from the document and cites it — not a plausible-sounding guess.</p>
+    <p>It answers policy questions using the actual values from the documents, with a citation.</p>
     <div class="shot-single shot" style="max-width:600px">
       <img src="images/ai-it-ops/grounded-answer.png" alt="Chat showing the assistant correctly answering that the processing target for a normal access request is 2 business days, with a citation to the IT Access Policy document">
     </div>
@@ -118,12 +125,12 @@
 
   <section class="chapter" id="guardrails">
     <div class="step">GUARDRAILS</div>
-    <h2 class="chapter-title">It pushes back on bad requests instead of forwarding them</h2>
-    <p>Asked to submit a request for Global Administrator "in case it's useful later," it doesn't just relay that to an approver — it explains why that violates least privilege and asks for an actual business justification before proceeding.</p>
+    <h2 class="chapter-title">Guardrails</h2>
+    <p>Asked to request Global Administrator access "in case it's useful later," the assistant explains that this violates least privilege and asks for a specific justification instead of submitting the request as-is.</p>
     <div class="shot-single shot">
       <img src="images/ai-it-ops/least-privilege-pushback.png" alt="Chat showing the assistant refusing to submit a vague Global Administrator access request, explaining least-privilege requirements and asking for a specific justification">
     </div>
-    <p class="shot-caption">A real exchange — the request was deliberately vague and over-privileged to see how the agent would handle it.</p>
+    <p class="shot-caption">Testing a deliberately vague, over-privileged request.</p>
     <div class="outcome-strip">
       <span class="pill pass">Valid request → approved</span>
       <span class="pill pass">Vague/over-privileged request → challenged</span>
@@ -133,9 +140,9 @@
   </section>
 
   <section class="chapter" id="limitation">
-    <div class="step">WHAT DIDN'T WORK YET</div>
-    <h2 class="chapter-title">The agent can't actually submit the request on its own</h2>
-    <p>The assistant correctly recognizes when someone wants to create a request and extracts all six required fields cleanly from the conversation. Where it breaks: the call from the Copilot agent into the Power Automate flow comes back with an HTTP 403, and the flow's run history shows zero executions — meaning it's getting blocked at the authorization boundary between the agent and the workflow, before anything in SharePoint happens.</p>
+    <div class="step">KNOWN LIMITATION</div>
+    <h2 class="chapter-title">Known limitation</h2>
+    <p>The assistant correctly extracts all required fields from the conversation, but submitting the request fails: the call from Copilot Studio to the Power Automate flow returns an HTTP 403, and the flow shows zero runs — it's blocked before reaching SharePoint.</p>
     <div class="shot-row">
       <div>
         <div class="shot"><img src="images/ai-it-ops/known-limitation-403.png" alt="Chat showing the assistant extracting all six request fields correctly, then reporting a 403 forbidden error when trying to submit"></div>
@@ -143,16 +150,16 @@
       </div>
       <div>
         <div class="shot"><img src="images/ai-it-ops/monitor-no-runs.png" alt="Copilot Studio monitoring dashboard showing zero tool uses and zero workflow runs"></div>
-        <p class="shot-caption">Monitoring confirms it: no runs ever reached the flow.</p>
+        <p class="shot-caption">No runs reached the flow.</p>
       </div>
     </div>
-    <p>My best guess is a licensing or runtime-permission gap between the agent and the Power Platform environment in this particular tenant, rather than anything wrong with the flow itself — the same flow runs fine when triggered directly from SharePoint. Next step would be checking runtime entitlements in a fully licensed tenant, and trying the classic Agent Flow connection as a fallback if that doesn't resolve it.</p>
+    <p>Likely a licensing or permission gap between the agent and the Power Platform environment in this tenant — the same flow works fine when triggered directly from SharePoint. Next step: check runtime entitlements in a fully licensed tenant, or use the Agent Flow connection as a fallback.</p>
   </section>
 
   <section class="chapter" id="next">
     <div class="step">WHAT'S NEXT</div>
-    <h2 class="chapter-title">If I kept building this</h2>
-    <p>Fix the agent-to-workflow permission issue, then move the knowledge base off uploaded demo files and onto permission-aware SharePoint sources. Add a status lookup so people can check their own request instead of asking. Add retries, owner notifications, and logging so failures don't go unnoticed. Then pilot it with a small group and actually measure the thing — self-service rate, approval time, how often it escalates instead of answering.</p>
+    <h2 class="chapter-title">What's next</h2>
+    <p>Fix the agent-to-workflow permission issue. Move the knowledge base to permission-aware SharePoint sources. Add a status lookup, retries, and logging. Pilot with a small group and measure self-service rate and approval time.</p>
   </section>
 
 </main>

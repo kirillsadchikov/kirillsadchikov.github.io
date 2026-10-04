@@ -37,7 +37,7 @@ header.hero .eyebrow{
 }
 header.hero h1{font-size:32px; margin:0 0 10px; line-height:1.25}
 header.hero p.lede{font-size:16px; color:#cfe0fb; max-width:640px; margin:0 0 20px}
-.badges{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:22px}
+.badges{display:flex; flex-wrap:wrap; gap:8px}
 .badge{
   background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.25);
   color:#fff; font-size:12.5px; padding:5px 11px; border-radius:999px;
@@ -47,9 +47,15 @@ header.hero p.lede{font-size:16px; color:#cfe0fb; max-width:640px; margin:0 0 20
   display:inline-block; margin-bottom:18px;
 }
 .back-link:hover{color:#fff}
-.status-row{display:flex; gap:28px; margin-top:26px; flex-wrap:wrap}
-.status-item .k{font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:#9fc0f5}
-.status-item .v{font-size:14px; font-weight:600; margin-top:2px}
+.meta-row{display:flex; gap:36px; flex-wrap:wrap; margin-top:22px}
+.meta-label{
+  font-size:11px; text-transform:uppercase; letter-spacing:.06em;
+  color:#9fc0f5; font-weight:600; margin-bottom:9px;
+}
+header.hero p.lede.roles{
+  font-size:14px; text-transform:uppercase; letter-spacing:.06em; font-weight:700;
+  color:#9fc0f5; margin-bottom:0;
+}
 
 /* ---- layout ---- */
 main{padding:40px 0 64px}

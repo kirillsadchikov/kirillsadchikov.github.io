@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Subsidy Application Management — Kirill Sadchikov</title>
+<meta name="description" content="An Oracle APEX application that manages farms, crops, and area-based subsidy applications, with the calculation logic in reusable PL/SQL.">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <a class="back-link" href="../index.html">← Back to portfolio</a>
+    <div class="eyebrow">Application Development</div>
+    <h1>Subsidy Application Management</h1>
+    <p class="lede">A browser-based Oracle APEX application that manages farms, crops, and area-based subsidy applications, then calculates and stores the subsidy amount from reusable PL/SQL — not from logic duplicated in the UI.</p>
+    <div class="meta-row">
+      <div class="meta-block">
+        <div class="meta-label">Tools</div>
+        <div class="badges">
+          <span class="badge">Oracle APEX</span>
+          <span class="badge">Oracle Database</span>
+          <span class="badge">SQL</span>
+          <span class="badge">PL/SQL</span>
+        </div>
+      </div>
+      <div class="meta-block">
+        <div class="meta-label">Skills</div>
+        <div class="badges">
+          <span class="badge">Relational Data Modeling</span>
+          <span class="badge">Business Logic Design</span>
+          <span class="badge">Testing &amp; Validation</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<nav class="subnav">
+  <div class="wrap">
+    <a href="#overview">Overview</a>
+    <a href="#data-model">Data model</a>
+    <a href="#logic">Business logic</a>
+    <a href="#testing">Testing &amp; reporting</a>
+    <a href="#limitations">Limitations</a>
+    <a href="#next">What's next</a>
+  </div>
+</nav>
+
+<main class="wrap">
+
+  <section class="chapter" id="overview">
+    <div class="step">OVERVIEW</div>
+    <h2 class="chapter-title">Overview</h2>
+    <p>Agricultural subsidy applications need structured master data, multiple land areas per application, a clear status, and a reproducible calculation. This application covers that end to end in Oracle APEX: a farm submits an application, areas are added with their crop and size, the application is validated, the subsidy amount is calculated, and the result and status are stored.</p>
+    <p class="lead">Built as a personal portfolio prototype for interviews around a role modeled on Agrarmarkt Austria's INVEKOS-style subsidy processing — the data and business rules are simplified demo assumptions, not a claim to know AMA's actual systems.</p>
+    <div class="shot-single shot">
+      <img src="images/apex-foerderantrag/master-detail.png" alt="Master-detail application view in Oracle APEX showing two subsidy applications (Biohof Steiner, Landwirtschaft Huber) with status BERECHNET, and the area/crop detail grid for the selected application showing Weizen and Mais with hectare values">
+    </div>
+    <p class="shot-caption">Master-detail view after a successful PL/SQL calculation: 2,080 subsidy amount, status BERECHNET.</p>
+  </section>
+
+  <section class="chapter" id="data-model">
+    <div class="step">DATA MODEL</div>
+    <h2 class="chapter-title">Data model</h2>
+    <p>The business process is create application → add areas → validate data → calculate amount → store result/status. Four tables carry it: a farm (BETRIEB) has many applications (ANTRAG) across years; each application has many areas (ANTRAG_FLAECHE); each area references a crop (KULTUR) that carries the per-hectare rate the calculation uses.</p>
+    <div class="shot-single shot">
+      <img src="images/apex-foerderantrag/data-model.png" alt="Relational data model diagram: BETRIEB 1:n ANTRAG 1:n ANTRAG_FLAECHE n:1 KULTUR, with primary and foreign keys for each table">
+    </div>
+    <table>
+      <tr><th>Rule</th><th>Enforced by</th></tr>
+      <tr><td>One application per farm and year</td><td><code>UNIQUE (BETRIEB_ID, JAHR)</code></td></tr>
+      <tr><td>Area sizes must be positive</td><td><code>CHECK (HEKTAR &gt; 0)</code></td></tr>
+      <tr><td>Applications, areas, crops, and farms stay consistent</td><td>Foreign keys between all four tables</td></tr>
+      <tr><td>Readable names in the UI, technical IDs in the database</td><td>APEX List of Values on top of the FK columns</td></tr>
+    </table>
+  </section>
+
+  <section class="chapter" id="logic">
+    <div class="step">BUSINESS LOGIC</div>
+    <h2 class="chapter-title">Business logic in PL/SQL, not in the UI</h2>
+    <p>The calculation is split into a pure function and a procedure that controls the process, so the APEX page never duplicates the business rule itself — it just calls into the database. The function only calculates; the procedure validates first, then calls the function, then persists the result.</p>
+    <div class="shot-row">
+      <div>
+        <div class="shot"><img src="images/apex-foerderantrag/code-function.png" alt="PL/SQL function F_ERMITTLE_FOERDERBETRAG: selects the sum of hectares times rate per hectare, joining ANTRAG_FLAECHE to KULTUR, for the given application ID, and returns the total"></div>
+        <p class="shot-caption">The function: pure calculation, receives an application ID, returns a NUMBER.</p>
+      </div>
+      <div>
+        <div class="shot"><img src="images/apex-foerderantrag/code-procedure.png" alt="PL/SQL procedure BERECHNE_FOERDERBETRAG: counts the application's areas and raises ORA-20001 if there are none, otherwise calls the function and updates the application with the amount and status BERECHNET"></div>
+        <p class="shot-caption">The procedure: validates first, calls the function, then updates status and amount.</p>
+      </div>
+    </div>
+    <p>The "Förderbetrag berechnen" button on the APEX page passes the current application ID to the procedure — nothing else. Status and the calculated amount are display-only fields controlled entirely by this logic, not editable directly.</p>
+  </section>
+
+  <section class="chapter" id="testing">
+    <div class="step">TESTING &amp; REPORTING</div>
+    <h2 class="chapter-title">Testing &amp; reporting</h2>
+    <p>Two manual end-to-end tests cover the behavior that matters: a normal calculation, and what happens when the precondition isn't met.</p>
+    <div class="shot-row">
+      <div>
+        <div class="shot"><img src="images/apex-foerderantrag/negative-test.png" alt="APEX edit form showing an error banner: 1 error has occurred, ORA-20001: Der Antrag enthaelt keine Flaechen, when attempting to calculate an application with no areas"></div>
+        <p class="shot-caption">Negative test: an application without areas is rejected with ORA-20001 before any amount is written.</p>
+      </div>
+      <div>
+        <div class="shot"><img src="images/apex-foerderantrag/antragsuebersicht.png" alt="Interactive report named Antragsuebersicht showing one application for Biohof Steiner, year 2026, status BERECHNET, subsidy amount 2950, 2 areas, 16 hectares total"></div>
+        <p class="shot-caption">V_ANTRAG_UEBERSICHT: a reporting view, used directly as the data source for an APEX Interactive Report.</p>
+      </div>
+    </div>
+    <div class="outcome-strip">
+      <span class="pill pass">Positive test: Landwirtschaft Huber → 8 ha Weizen × 200 + 4 ha Grünland × 120 = 2,080, status BERECHNET</span>
+      <span class="pill pass">Negative test: application with zero areas → ORA-20001, no amount written</span>
+    </div>
+    <p>The reporting view joins application and farm data, uses a <code>LEFT JOIN</code> so applications stay visible even before any area is added, and aggregates the area count and total hectares per application.</p>
+  </section>
+
+  <section class="chapter" id="limitations">
+    <div class="step">LIMITATIONS</div>
+    <h2 class="chapter-title">Limitations</h2>
+    <p>This is intentionally a small prototype, not a claim to replicate AMA's actual INVEKOS-style systems — the data model, subsidy rates, and business rules are simplified demo assumptions. Testing is manual rather than automated. There's a single status value set by the calculation (BERECHNET) rather than a fuller application workflow, and no role-based authorization — anyone with access to the app can edit any application.</p>
+  </section>
+
+  <section class="chapter" id="next">
+    <div class="step">WHAT'S NEXT</div>
+    <h2 class="chapter-title">What's next</h2>
+    <p>Historical subsidy rates by year, instead of a single current rate per crop. A richer status workflow beyond NEU/BERECHNET. Role-based authorization so only the right users can edit a given farm's applications. Automated tests instead of the two manual cases. A REST endpoint for submitting applications programmatically, audit logging on status and amount changes, and geospatial data for the areas themselves rather than just a hectare figure.</p>
+  </section>
+
+</main>
+
+<footer class="wrap">
+  <p>Kirill Sadchikov — <a href="../index.html">portfolio home</a></p>
+  <p class="disclaimer">Built as a personal portfolio prototype. Business rules and subsidy rates are simplified demo assumptions, not a representation of any real organization's systems.</p>
+</footer>
+
+</body>
+</html>

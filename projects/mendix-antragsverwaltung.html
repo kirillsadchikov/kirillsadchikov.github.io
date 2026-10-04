@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Request &amp; Approval Management — Kirill Sadchikov</title>
+<meta name="description" content="A Mendix low-code application for an internal request and approval process, with the business rule and workflow in a reusable microflow.">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <a class="back-link" href="../index.html">← Back to portfolio</a>
+    <div class="eyebrow">Low-Code Development</div>
+    <h1>Request &amp; Approval Management</h1>
+    <p class="lede">A Mendix application for an internal request and approval process: a case worker submits a request, the amount decides automatically whether it needs approval, and an approver can only approve or reject what's actually still open.</p>
+    <div class="meta-row">
+      <div class="meta-block">
+        <div class="meta-label">Tools</div>
+        <div class="badges">
+          <span class="badge">Mendix</span>
+          <span class="badge">Domain Model</span>
+          <span class="badge">Microflows</span>
+        </div>
+      </div>
+      <div class="meta-block">
+        <div class="meta-label">Skills</div>
+        <div class="badges">
+          <span class="badge">Requirements Engineering</span>
+          <span class="badge">Process Automation</span>
+          <span class="badge">Role-Based Access Design</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<nav class="subnav">
+  <div class="wrap">
+    <a href="#overview">Overview</a>
+    <a href="#process">Process &amp; data model</a>
+    <a href="#logic">Core logic</a>
+    <a href="#roles">Roles &amp; views</a>
+    <a href="#testing">Testing</a>
+    <a href="#limitations">Limitations</a>
+    <a href="#next">What's next</a>
+  </div>
+</nav>
+
+<main class="wrap">
+
+  <section class="chapter" id="overview">
+    <div class="step">OVERVIEW</div>
+    <h2 class="chapter-title">Overview</h2>
+    <p>Requests inside a company are often handled by email, spreadsheet, or informal back-and-forth, which makes status, ownership, and approvals hard to track. This application digitizes a typical internal request-and-approval process in Mendix: clear ownership, an automatic business rule for when approval is required, and a status that always reflects where a request actually stands.</p>
+    <p class="lead">Mendix was named explicitly in the job description this was built for. The project shows how existing knowledge of business processes, data modeling, logic, and roles carries over to a new low-code platform.</p>
+    <div class="shot-row">
+      <div>
+        <div class="shot"><img src="images/mendix-antragsverwaltung/antragsuebersicht.png" alt="Case worker overview page in Mendix listing requests with requester, priority, amount, deadline, and status columns, sortable and filterable"></div>
+        <p class="shot-caption">Case worker overview: requester, priority, amount, deadline, and status at a glance.</p>
+      </div>
+      <div>
+        <div class="shot"><img src="images/mendix-antragsverwaltung/neuer-antrag.png" alt="New request form in Mendix with four fields: receipt date, amount, requester, and priority, plus Save and Cancel buttons"></div>
+        <p class="shot-caption">New request: only the fields that actually need a person to enter them.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="chapter" id="process">
+    <div class="step">PROCESS &amp; DATA MODEL</div>
+    <h2 class="chapter-title">Process &amp; data model</h2>
+    <p>The process is submit request → check business rule → create approval → approve/reject → update status. Four entities carry it: Request, Requester, Priority, and Approval, connected by associations rather than copied data, so a requester or a priority is referenced, not duplicated onto every request.</p>
+    <div class="shot-single shot">
+      <img src="images/mendix-antragsverwaltung/datenmodell.png" alt="Mendix domain model diagram: Antrag entity with AntragNr, Eingangsdatum, Betrag, Frist, Status, associated to Antragsteller, Prioritaet, and Genehmigung entities">
+    </div>
+    <p class="shot-caption">Four entities, connected by associations: Antrag (request), Antragsteller (requester), Prioritaet (priority), Genehmigung (approval).</p>
+  </section>
+
+  <section class="chapter" id="logic">
+    <div class="step">CORE LOGIC</div>
+    <h2 class="chapter-title">Core logic: ACT_Antrag_Save</h2>
+    <p>On save, one microflow does five things in order: load the priority, calculate the deadline from it, check the amount against the approval threshold, check whether an approval already exists, and only create a new approval if one is actually needed.</p>
+    <div class="shot-single shot">
+      <img src="images/mendix-antragsverwaltung/microflow.png" alt="Mendix microflow ACT_Antrag_Save: retrieve priority, change request's deadline, commit request, decision on whether approval is required (amount over 1000), retrieve existing approval, second decision on whether an approval already exists, create approval if needed, close page">
+    </div>
+    <p class="shot-caption">The business rule (amount &gt; €1,000 needs approval) and the duplicate-approval check both live in this one microflow, not scattered across the UI.</p>
+    <table>
+      <tr><th>Area</th><th>Rule</th></tr>
+      <tr><td>Business rule</td><td>Amount &gt; €1,000 requires approval</td></tr>
+      <tr><td>Data quality</td><td>No duplicate approvals — checked before creating a new one</td></tr>
+      <tr><td>Roles</td><td>Case worker / Approver</td></tr>
+      <tr><td>UI/UX</td><td>Only the relevant actions are shown for each role</td></tr>
+    </table>
+  </section>
+
+  <section class="chapter" id="roles">
+    <div class="step">ROLES &amp; VIEWS</div>
+    <h2 class="chapter-title">Roles &amp; views</h2>
+    <p>Case workers and approvers see different pages with different actions, enforced through separate Mendix roles rather than one shared screen with conditionally hidden buttons. An approver can act on anything still open; a decided request is locked, and a confirmation step sits in front of every approve or reject.</p>
+    <div class="shot-single shot">
+      <img src="images/mendix-antragsverwaltung/genehmiger-ansicht.png" alt="Approver view in Mendix showing a list of approvals with requester, amount, deadline, submitted date, approver, and decision columns; open items have Genehmigen (approve) and Ablehnen (reject) buttons">
+    </div>
+    <p class="shot-caption">Approver view: open items get Approve/Reject buttons, decided ones don't.</p>
+  </section>
+
+  <section class="chapter" id="testing">
+    <div class="step">TESTING</div>
+    <h2 class="chapter-title">Testing</h2>
+    <p>End-to-end tests cover the amount threshold, automatic approval creation, approve/reject, the status change that follows, and re-saving an already-decided request. One edge case surfaced during testing and was fixed before it shipped: saving a request multiple times could create more than one approval for it. The core-logic microflow now checks for an existing approval before creating a new one — the "ExistingGenehmigung" branch in the microflow screenshot above.</p>
+  </section>
+
+  <section class="chapter" id="limitations">
+    <div class="step">LIMITATIONS</div>
+    <h2 class="chapter-title">Limitations</h2>
+    <p>This is a prototype, not a production deployment. Security is role-based demo security, not hardened for production use. There's no REST/API integration yet — the next production step would need data mapping, authentication, error handling, and logging. Testing is manual end-to-end cases, not automated tests.</p>
+  </section>
+
+  <section class="chapter" id="next">
+    <div class="step">WHAT'S NEXT</div>
+    <h2 class="chapter-title">What's next</h2>
+    <p>REST/API integration, a configurable approval threshold instead of a fixed €1,000, multi-level approvals, a required reason when rejecting, a working-day-aware deadline calculation, audit logging, deeper security testing, automated tests, and an actual production deployment.</p>
+  </section>
+
+</main>
+
+<footer class="wrap">
+  <p>Kirill Sadchikov — <a href="../index.html">portfolio home</a></p>
+  <p class="disclaimer">Built as a personal portfolio prototype for a Mendix/low-code role application. Not a production system.</p>
+</footer>
+
+</body>
+</html>

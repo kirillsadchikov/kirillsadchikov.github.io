@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sales Analytics on Databricks — Kirill Sadchikov</title>
+<meta name="description" content="A medallion-architecture Databricks pipeline joining a marketing lead funnel to seller commerce activity — 8,000 leads to €676K in attributed post-acquisition revenue.">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow">Data Pipeline</div>
+    <h1>Sales Analytics on Databricks</h1>
+    <p class="lede">A bronze → silver → gold pipeline that joins marketing lead data to commerce data at the seller level — so "which channel converts the most leads" and "which channel brings in sellers who actually sell something" stop being two different answers.</p>
+    <div class="badges">
+      <span class="badge">Databricks</span>
+      <span class="badge">PySpark</span>
+      <span class="badge">Spark SQL</span>
+      <span class="badge">Delta Lake</span>
+      <span class="badge">Unity Catalog</span>
+    </div>
+    <div class="hero-links">
+      <a class="primary" href="https://github.com/kirillsadchikov/sales-analytics-databricks">View code on GitHub →</a>
+      <a href="../index.html">← Back to portfolio</a>
+    </div>
+    <div class="status-row">
+      <div class="status-item"><div class="k">Status</div><div class="v">Both pipelines built, validated end-to-end</div></div>
+      <div class="status-item"><div class="k">Environment</div><div class="v">Databricks Free Edition, public Olist e-commerce dataset</div></div>
+    </div>
+  </div>
+</header>
+
+<nav class="subnav">
+  <div class="wrap">
+    <a href="#numbers">The numbers</a>
+    <a href="#problem">The question</a>
+    <a href="#architecture">Architecture</a>
+    <a href="#funnel">Marketing funnel</a>
+    <a href="#seller-value">Seller value</a>
+    <a href="#quality">Data quality</a>
+    <a href="#limitations">Limitations</a>
+    <a href="#next">What's next</a>
+  </div>
+</nav>
+
+<main class="wrap">
+
+  <section class="chapter" id="numbers">
+    <div class="step">THE RESULT</div>
+    <h2 class="chapter-title">8,000 leads in, €676,851 in attributed revenue out</h2>
+    <p>Pulled straight from the gold-layer tables — a lead that becomes a won deal, becomes a seller, becomes orders and revenue, all traceable back to the channel that brought them in.</p>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="num">8,000</div><div class="label">Total leads</div></div>
+      <div class="stat-card"><div class="num">842</div><div class="label">Acquired sellers (won deals)</div></div>
+      <div class="stat-card"><div class="num">10.53%</div><div class="label">Lead → acquired conversion</div></div>
+      <div class="stat-card"><div class="num">380</div><div class="label">Activated sellers (placed an order)</div></div>
+      <div class="stat-card"><div class="num">45.13%</div><div class="label">Acquired → activated rate</div></div>
+      <div class="stat-card"><div class="num">4,518</div><div class="label">Post-acquisition orders</div></div>
+      <div class="stat-card"><div class="num">€676,851</div><div class="label">Post-acquisition revenue</div></div>
+    </div>
+  </section>
+
+  <section class="chapter" id="problem">
+    <div class="step">THE QUESTION</div>
+    <h2 class="chapter-title">Marketing can tell you conversion. It can't tell you revenue.</h2>
+    <p>A lead funnel lives in one system. Orders and payments live in another. Most of the time those two never actually get joined — so you can answer "which channel converts the most leads" but not "which channel brings in sellers who go on to sell something." I wanted to build the pipeline that closes that gap: lead → won deal → seller → first order → revenue, attributed all the way back to the channel and landing page that originated it.</p>
+    <p>Dataset: the public <a href="https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce" target="_blank" rel="noopener">Olist Brazilian e-commerce dataset</a> — marketing-qualified-leads and closed-deals tables joined against the full commerce schema (orders, order items, payments, products, sellers, customers, reviews, geolocation).</p>
+  </section>
+
+  <section class="chapter" id="architecture">
+    <div class="step">ARCHITECTURE</div>
+    <h2 class="chapter-title">Two medallion pipelines that converge at gold</h2>
+    <p>Marketing and commerce data start as separate bronze/silver pipelines and meet at the gold layer, where seller-value tables are attributed back to the lead that acquired them.</p>
+    <table>
+      <tr><th>Layer</th><th>Marketing funnel</th><th>Commerce</th></tr>
+      <tr>
+        <td><strong>Bronze</strong></td>
+        <td>Raw MQL + closed-deals CSVs, ingested as-is with <code>_source_file</code> / <code>_ingested_at</code> lineage columns</td>
+        <td>9 raw Olist CSVs (sellers, orders, items, payments, products, customers, reviews, geolocation, category translation)</td>
+      </tr>
+      <tr>
+        <td><strong>Silver</strong></td>
+        <td>Deduplicated via window functions, categorical fields standardized, timeline anomalies flagged and quarantined — not dropped</td>
+        <td>Orders/items/payments/products joined and rolled up to seller- and order-grain, with revenue reconciled to the cent</td>
+      </tr>
+      <tr>
+        <td><strong>Gold</strong></td>
+        <td>Lead-level funnel, channel performance, landing-page performance, monthly trend</td>
+        <td>Acquired-seller performance — post-acquisition orders/revenue only, attributed one record per seller via window-function dedup</td>
+      </tr>
+    </table>
+    <p class="lead">Everything lands as managed Delta tables in Unity Catalog (<code>workspace.default.*</code>); raw files sit in a Unity Catalog volume.</p>
+  </section>
+
+  <section class="chapter" id="funnel">
+    <div class="step">MARKETING FUNNEL</div>
+    <h2 class="chapter-title">Where leads actually come from, and where they stall</h2>
+    <p>The funnel breaks out cleanly by channel — and the split between "brings in volume" and "brings in sellers who convert" shows up immediately:</p>
+    <table>
+      <tr><th>Channel</th><th>Leads</th><th>Acquired</th><th>Conversion</th><th>Activation</th><th>Revenue</th></tr>
+      <tr><td>Organic search</td><td>2,296</td><td>271</td><td>11.8%</td><td>41.7%</td><td>€207,023</td></tr>
+      <tr><td>Paid search</td><td>1,586</td><td>195</td><td>12.3%</td><td>51.8%</td><td>€155,277</td></tr>
+      <tr><td>Social</td><td>1,350</td><td>75</td><td>5.6%</td><td>41.3%</td><td>€43,478</td></tr>
+      <tr><td>Direct traffic</td><td>499</td><td>56</td><td>11.2%</td><td>55.4%</td><td>€21,904</td></tr>
+      <tr><td>Referral</td><td>284</td><td>24</td><td>8.5%</td><td>37.5%</td><td>€17,887</td></tr>
+      <tr><td>Email</td><td>493</td><td>15</td><td>3.0%</td><td>40.0%</td><td>€8,485</td></tr>
+    </table>
+    <p>Organic search wins on total volume and total revenue, simply because it brings in the most leads. But paid search is the better channel <em>per seller</em>: a smaller lead pool that activates more often (51.8% vs. organic's 41.7%) and earns more per acquired seller once it does (€796 vs. €764). Social pulls in real volume but converts worse than every other channel — the kind of gap that's invisible until lead data and commerce data are actually joined.</p>
+  </section>
+
+  <section class="chapter" id="seller-value">
+    <div class="step">SELLER VALUE</div>
+    <h2 class="chapter-title">Only counting revenue a seller earned after they were acquired</h2>
+    <p>The attribution logic here is the part I'd actually defend in an interview: each seller is matched to their <em>earliest</em> won lead (window-function dedup, ties broken deterministically), and only orders placed <strong>on or after</strong> that acquisition date count toward their post-acquisition value. Orders that happen to predate the recorded win — a messy-data edge case in the raw dataset — don't inflate the numbers.</p>
+    <table>
+      <tr><th>Check</th><th>Result</th></tr>
+      <tr><td>Won leads matched to a seller</td><td>842</td></tr>
+      <tr><td>Unique acquired sellers after dedup</td><td>842 — no duplicate attribution</td></tr>
+      <tr><td>Sellers with ≥1 post-acquisition order</td><td>380 (45.13%)</td></tr>
+      <tr><td>Total post-acquisition orders</td><td>4,518</td></tr>
+    </table>
+  </section>
+
+  <section class="chapter" id="quality">
+    <div class="step">DATA QUALITY</div>
+    <h2 class="chapter-title">Bad rows get flagged and quarantined, not deleted</h2>
+    <p>When the pipeline hits bad data, it doesn't silently drop it. The marketing funnel has exactly one row with a negative sales-cycle-days value — a data-entry issue upstream. It's flagged with <code>has_invalid_sales_timeline</code>, excluded from cycle-time averages, and written to a separate quarantine table rather than deleted outright. Every layer writes its own quality table, and the notebooks assert on the numbers — if silver commerce item revenue doesn't reconcile to seller-level revenue within 0.01, the notebook fails loudly instead of shipping a quietly wrong gold table.</p>
+    <table>
+      <tr><th>Quality check</th><th>Finding</th></tr>
+      <tr><td>Leads with unknown channel</td><td>1,159 (flagged, not discarded)</td></tr>
+      <tr><td>Invalid sales timelines</td><td>1 row — quarantined</td></tr>
+      <tr><td>Won leads without post-acquisition orders</td><td>462 — the inactive side of the 45.13% activation rate</td></tr>
+      <tr><td>Item revenue → seller revenue reconciliation</td><td>Matches within €0.01, asserted on every run</td></tr>
+    </table>
+    <div class="outcome-strip">
+      <span class="pill pass">Bronze → silver row counts reconciled</span>
+      <span class="pill pass">Silver → gold revenue reconciled</span>
+      <span class="pill pass">Anomalies quarantined, not dropped</span>
+    </div>
+  </section>
+
+  <section class="chapter" id="limitations">
+    <div class="step">WHAT DIDN'T MAKE THE CUT</div>
+    <h2 class="chapter-title">Built on Free Edition — that's a real constraint, not a footnote</h2>
+    <p>This runs on Databricks' free single-user workspace: no Jobs/Workflows scheduler, no multi-user access control, no autoscaling cluster. There's no "runs nightly" story here — it's run-the-notebooks-in-order. In a production environment this would be a Delta Live Tables pipeline or a scheduled multi-task Job. The Olist dataset is also a fixed historical snapshot (2017–2018), so the monthly-trend numbers describe that window, not a live feed — the lineage columns and reconciliation asserts are written as if new files would land periodically, but nothing here actually tests that. And there's no BI layer on top: numbers are surfaced through notebook queries, not a dashboard tool — a deliberate scope cut for an interview-facing artifact, not an oversight.</p>
+  </section>
+
+  <section class="chapter" id="next">
+    <div class="step">WHAT'S NEXT</div>
+    <h2 class="chapter-title">If I kept building this</h2>
+    <p>Move it onto a workspace with Jobs and turn the bronze→silver→gold notebooks into a scheduled, properly-ordered pipeline. Add a thin BI layer on the gold tables. Extend seller-value past the first-year window to look at retention and churn, not just activation. Replace the inline asserts with real unit tests for the transformation logic.</p>
+  </section>
+
+</main>
+
+<footer class="wrap">
+  <p>Kirill Sadchikov — <a href="../index.html">portfolio home</a> · <a href="https://github.com/kirillsadchikov/sales-analytics-databricks">GitHub repo</a></p>
+</footer>
+
+</body>
+</html>

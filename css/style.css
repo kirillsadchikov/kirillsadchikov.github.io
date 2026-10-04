@@ -89,6 +89,7 @@ ul.plain li{margin-bottom:6px; color:var(--ink)}
 }
 .project-card .links{display:flex; gap:14px; margin-top:auto; padding-top:8px; font-size:14px; font-weight:600}
 .project-card .links a{text-decoration:none}
+.more-soon{color:var(--muted); font-size:13.5px; margin:16px 0 0}
 
 /* ---- tables ---- */
 table{width:100%; border-collapse:collapse; font-size:14px}

@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI & IT Operations Assistant — Case Study — Kirill Sadchikov</title>
+<meta name="description" content="A grounded Copilot Studio assistant paired with deterministic Power Automate workflows for internal IT self-service.">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow">Case Study · Proof of Concept</div>
+    <h1>AI &amp; IT Operations Assistant</h1>
+    <p class="lede">A grounded Copilot Studio assistant paired with deterministic Power Automate workflows, built to turn repetitive IT questions and messy access requests into a self-service flow with real audit trails.</p>
+    <div class="badges">
+      <span class="badge">Copilot Studio</span>
+      <span class="badge">Power Automate</span>
+      <span class="badge">SharePoint</span>
+      <span class="badge">Dataverse</span>
+      <span class="badge">Power Platform</span>
+    </div>
+    <div class="hero-links">
+      <a class="primary" href="https://github.com/kirillsadchikov/ai-it-operations-assistant">View code on GitHub →</a>
+      <a href="../index.html">← Back to portfolio</a>
+    </div>
+    <div class="status-row">
+      <div class="status-item"><div class="k">Project type</div><div class="v">Proof of Concept</div></div>
+      <div class="status-item"><div class="k">Status</div><div class="v">Core components tested</div></div>
+      <div class="status-item"><div class="k">Production use</div><div class="v">No — isolated test tenant</div></div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section>
+    <h2 class="section-title">The problem</h2>
+    <p>Employees ask the same IT questions over and over, and submit access requests through unstructured messages — chat, email, hallway asks. That creates incomplete requests, manual follow-up for IT, no visibility into status, and approval records that are hard to reconstruct later. And a general-purpose AI assistant left ungrounded will confidently invent internal policy it was never given.</p>
+    <div class="card">
+      <ul class="plain">
+        <li>Repetitive IT/process questions consume employee and IT time</li>
+        <li>Access requests are vague, incomplete, or sent through inconsistent channels</li>
+        <li>Approvals are hard to track when they happen through scattered messages</li>
+        <li>Employees may ask for broader permissions than they need</li>
+        <li>An ungrounded AI assistant may invent internal policy details</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2 class="section-title">Design decision: where AI ends and automation begins</h2>
+    <p class="lead">The core judgment call in this project — and the one I'd bring into any automation role — is that not every step belongs to the AI. Natural language understanding is the AI's job. Anything that has to be predictable, auditable and repeatable is a deterministic workflow's job, not a model's.</p>
+    <table>
+      <tr><th>Area</th><th>Technology choice</th><th>Reason</th></tr>
+      <tr><td>Natural-language questions</td><td>AI / Copilot Studio</td><td>Users express the same need in many different ways</td></tr>
+      <tr><td>Knowledge grounding</td><td>AI + controlled documents</td><td>Use approved sources, avoid inventing internal policy</td></tr>
+      <tr><td>Request capture</td><td>AI extracts structured fields</td><td>Turns conversation into system, justification, priority, approver, description</td></tr>
+      <tr><td>Approval &amp; status logic</td><td>Deterministic Power Automate</td><td>Business actions must be predictable, auditable, repeatable</td></tr>
+      <tr><td>Access decision</td><td>Human in the loop</td><td>Sensitive permissions are never granted autonomously by AI</td></tr>
+    </table>
+  </section>
+
+  <section>
+    <h2 class="section-title">What's built</h2>
+    <div class="grid2">
+      <div class="card"><h3>Power Platform foundation</h3><p class="lead">Isolated M365 tenant, licensing, Power Platform environment, Dataverse, security roles.</p></div>
+      <div class="card"><h3>SharePoint system of record</h3><p class="lead">An IT Requests list tracks every request as a structured, auditable record.</p></div>
+      <div class="card"><h3>Approval workflow</h3><p class="lead">New request → Pending Approval → approval → Approved/Rejected → update → email, fully deterministic.</p></div>
+      <div class="card"><h3>Grounded assistant</h3><p class="lead">Copilot Studio agent grounded on three internal policy documents — no answers invented.</p></div>
+      <div class="card"><h3>Safety behaviour</h3><p class="lead">Least privilege by default, no credential handling, escalates unknowns, never grants access itself.</p></div>
+      <div class="card"><h3>Request-creation tool</h3><p class="lead">Agent tool extracts six structured fields from free-text conversation.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2 class="section-title">Test plan and results</h2>
+    <table>
+      <tr><th>Test case</th><th>Expected</th><th>Actual</th><th>Status</th></tr>
+      <tr><td>Valid access request</td><td>Approval completes</td><td>Approved + email</td><td><span class="pill pass">Passed</span></td></tr>
+      <tr><td>Excessive Global Admin request</td><td>Rejected, least privilege</td><td>Rejected + comments</td><td><span class="pill pass">Passed</span></td></tr>
+      <tr><td>Exact policy retrieval</td><td>Returns 2-business-day target</td><td>Refined and retested</td><td><span class="pill pass">Passed after iteration</span></td></tr>
+      <tr><td>Unknown internal question</td><td>Escalate, don't invent</td><td>Escalated</td><td><span class="pill pass">Passed</span></td></tr>
+      <tr><td>Sensitive data / credentials</td><td>Refuse unsafe handling</td><td>Refused / warned</td><td><span class="pill pass">Passed</span></td></tr>
+      <tr><td>Tool input extraction</td><td>Populate six request fields</td><td>All six extracted</td><td><span class="pill pass">Passed</span></td></tr>
+      <tr><td>Agent → workflow invocation</td><td>Create SharePoint item</td><td>HTTP 403 before run</td><td><span class="pill warn">Known limitation</span></td></tr>
+    </table>
+  </section>
+
+  <section>
+    <div class="callout">
+      <h3>Known limitation — and why I'm showing it</h3>
+      <p>The agent correctly identifies the request-creation intent and populates all six workflow inputs. The tool call itself returns HTTP 403, with zero workflow runs in monitoring — meaning the request is blocked at the agent-to-workflow authorization boundary, before SharePoint or workflow logic ever executes.</p>
+      <p class="lead">Planned fix: validate runtime entitlement and licensing in a fully licensed tenant, check environment ownership and runtime permissions, test the classic Agent Flow bridge, and use a dedicated least-privilege service identity. A PoC that only shows the happy path isn't proof of much — diagnosing <em>why</em> something breaks, not just that it does, is most of the actual job.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2 class="section-title">Security &amp; governance</h2>
+    <div class="card">
+      <ul class="plain">
+        <li><strong>Least privilege</strong> — broad administrator access is challenged by default</li>
+        <li><strong>Human approval</strong> — the AI never grants access autonomously</li>
+        <li><strong>Prompt safety</strong> — passwords, MFA codes, API keys, tokens and private keys are never requested or stored</li>
+        <li><strong>Data minimization</strong> — only information required for the process is collected</li>
+        <li><strong>Grounding &amp; escalation</strong> — unsupported questions are escalated, never answered from general knowledge</li>
+        <li><strong>Production separation</strong> — real deployment needs controlled Dev/Test/Prod, DLP policies, monitoring, formal ownership</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2 class="section-title">Path to production</h2>
+    <p class="lead">Resolve the authorization issue → move demo knowledge files to permission-aware SharePoint sources → add employee self-service status lookups → add resilience (retries, logging, monitoring) → pilot with a small group → measure self-service rate, approval time, and escalation rate → productionize with a real permission model, DLP, and GDPR review.</p>
+  </section>
+
+</main>
+
+<footer class="wrap">
+  <p>Proof of concept built in an isolated Microsoft 365 tenant with fictional policies and test data — not a production deployment, not affiliated with any employer. Full project documentation (PDF) and setup notes are in the <a href="https://github.com/kirillsadchikov/ai-it-operations-assistant">GitHub repo</a>.</p>
+  <p class="disclaimer">Kirill Sadchikov — <a href="../index.html">portfolio home</a></p>
+</footer>
+
+</body>
+</html>

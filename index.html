@@ -4,44 +4,49 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Kirill Sadchikov — Portfolio</title>
-<meta name="description" content="Data analysis and AI automation projects by Kirill Sadchikov.">
+<meta name="description" content="Data analytics, business application and AI automation projects by Kirill Sadchikov.">
 <link rel="stylesheet" href="css/style.css">
+<style>
+  main.wrap{padding-top:40px; padding-bottom:56px}
+  .section-head{display:flex; align-items:baseline; gap:10px; margin:0 0 14px}
+  .section-head h2.section-title{margin:0}
+  .section-head .count{font-size:12px; color:var(--muted)}
+  section.in-progress-section{margin-top:44px}
+  .project-card.in-progress{
+    background:#f1f4f8; border:1px dashed #c3ccd8; cursor:default;
+  }
+  .project-card.in-progress:hover{transform:none; box-shadow:none; border-color:#c3ccd8}
+  .project-card.in-progress .tag{color:var(--muted)}
+  .project-card.in-progress h3{color:#4a5666; padding-right:96px}
+  .project-card.in-progress p{color:#6b7685}
+  .project-card.in-progress .tech span{background:#d5dce6; color:#33404f}
+  .status-badge{
+    position:absolute; top:24px; right:22px; font-size:10.5px; font-weight:700;
+    text-transform:uppercase; letter-spacing:.06em; color:var(--warn);
+    background:var(--warn-bg); border:1px solid #f3d9a9; padding:3px 9px; border-radius:999px;
+  }
+</style>
 </head>
 <body>
 
 <header class="hero hero-compact">
   <div class="wrap">
     <h1>Kirill Sadchikov</h1>
-    <p class="lede roles">Data Analyst · AI &amp; Automation · IT Support</p>
+    <p class="lede roles">Data Analytics · Business Applications · AI &amp; Automation</p>
   </div>
 </header>
 
 <main class="wrap">
 
   <section>
+    <div class="section-head"><h2 class="section-title">Projects</h2></div>
     <div class="project-grid">
 
-      <a class="project-card" href="projects/ai-it-operations-assistant.html">
-        <div class="tag">AI &amp; Automation</div>
-        <h3>AI &amp; IT Operations Assistant</h3>
-        <p>An AI assistant built with Copilot Studio that answers employee IT questions, paired with Power Automate workflows that route access requests for approval automatically.</p>
-        <div class="tech"><span>Copilot Studio</span><span>Power Automate</span><span>SharePoint</span><span>Dataverse</span></div>
-        <div class="card-arrow" aria-hidden="true">→</div>
-      </a>
-
-      <a class="project-card" href="projects/sales-analytics-databricks.html">
-        <div class="tag">Data Analytics</div>
-        <h3>Marketing &amp; Sales Analytics Pipeline</h3>
-        <p>A data pipeline, built on Databricks, that connects marketing lead data with sales data — covering ingestion, cleaning, transformation, and analysis to show which channels bring in customers who actually spend money.</p>
-        <div class="tech"><span>Databricks</span><span>PySpark</span><span>Spark SQL</span><span>Delta Lake</span></div>
-        <div class="card-arrow" aria-hidden="true">→</div>
-      </a>
-
-      <a class="project-card" href="projects/application-operations-cockpit.html">
-        <div class="tag">Data &amp; Process</div>
-        <h3>Application Operations Cockpit</h3>
-        <p>A PostgreSQL tool that reconciles customer records between two mismatched systems with a confidence-scored match, pre-categorizes incoming tickets the same way, and reports on backlog, SLA breaches, and data quality.</p>
-        <div class="tech"><span>PostgreSQL</span><span>Python</span><span>SQL</span></div>
+      <a class="project-card" href="projects/apex-foerderantrag.html">
+        <div class="tag">Application Development</div>
+        <h3>Subsidy Application Management</h3>
+        <p>An Oracle APEX application that manages farms, crops, and area-based subsidy applications, with the calculation logic in reusable PL/SQL instead of the UI.</p>
+        <div class="tech"><span>Oracle APEX</span><span>SQL</span><span>PL/SQL</span></div>
         <div class="card-arrow" aria-hidden="true">→</div>
       </a>
 
@@ -53,13 +58,36 @@
         <div class="card-arrow" aria-hidden="true">→</div>
       </a>
 
-      <a class="project-card" href="projects/apex-foerderantrag.html">
-        <div class="tag">Application Development</div>
-        <h3>Subsidy Application Management</h3>
-        <p>An Oracle APEX application that manages farms, crops, and area-based subsidy applications, with the calculation logic in reusable PL/SQL instead of the UI.</p>
-        <div class="tech"><span>Oracle APEX</span><span>SQL</span><span>PL/SQL</span></div>
+      <a class="project-card" href="projects/ai-it-operations-assistant.html">
+        <div class="tag">AI &amp; Automation</div>
+        <h3>AI &amp; IT Operations Assistant</h3>
+        <p>An AI assistant built with Copilot Studio that answers employee IT questions, paired with Power Automate workflows that route access requests for approval automatically.</p>
+        <div class="tech"><span>Copilot Studio</span><span>Power Automate</span><span>SharePoint</span><span>Dataverse</span></div>
         <div class="card-arrow" aria-hidden="true">→</div>
       </a>
+
+    </div>
+  </section>
+
+  <section class="in-progress-section">
+    <div class="section-head"><h2 class="section-title">In progress</h2></div>
+    <div class="project-grid">
+
+      <div class="project-card in-progress" aria-disabled="true">
+        <div class="status-badge">In progress</div>
+        <div class="tag">Data Analytics</div>
+        <h3>Marketing &amp; Sales Analytics Pipeline</h3>
+        <p>A data pipeline, built on Databricks, that connects marketing lead data with sales data — covering ingestion, cleaning, transformation, and analysis to show which channels bring in customers who actually spend money.</p>
+        <div class="tech"><span>Databricks</span><span>PySpark</span><span>Spark SQL</span><span>Delta Lake</span></div>
+      </div>
+
+      <div class="project-card in-progress" aria-disabled="true">
+        <div class="status-badge">In progress</div>
+        <div class="tag">Data &amp; Process</div>
+        <h3>Application Operations Cockpit</h3>
+        <p>A PostgreSQL tool that reconciles customer records between two mismatched systems with a confidence-scored match, pre-categorizes incoming tickets the same way, and reports on backlog, SLA breaches, and data quality.</p>
+        <div class="tech"><span>PostgreSQL</span><span>Python</span><span>SQL</span></div>
+      </div>
 
     </div>
   </section>
